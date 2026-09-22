@@ -2,8 +2,8 @@ name: Update OIC Feed
 
 on:
   schedule:
-    # Runs daily at 6:00 PM UTC
-    - cron: '0 18 * * *'
+    # Runs Monday to Friday at 6:00 PM Atlantic / 21:00 UTC
+    - cron: '0 21 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 feedgen
+        run: |
+          pip install playwright beautifulsoup4 feedgen
+          playwright install --with-deps chromium
 
       - name: Run script to generate XML
         run: python generate_oic_feed.py
