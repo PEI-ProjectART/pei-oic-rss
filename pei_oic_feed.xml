@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>PEI Orders in Council Updates</title>
+    <link>https://www.princeedwardisland.ca/en/publications/orders-in-council</link>
+    <description>Automated feed for newly published Prince Edward Island Orders in Council</description>
+    <docs>http://www.rssboard.org/rss-specification</docs>
+    <generator>python-feedgen</generator>
+    <language>en</language>
+    <lastBuildDate>Tue, 22 Sep 2026 14:25:16 +0000</lastBuildDate>
+  </channel>
+</rss>
