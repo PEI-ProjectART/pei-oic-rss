@@ -1,5 +1,4 @@
-from datetime import datetime
-import os
+from datetime import datetime, timezone
 import re
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -31,6 +30,7 @@ fg.description(
     "Automated feed for newly published Prince Edward Island Orders in Council"
 )
 fg.language("en")
+fg.lastBuildDate(datetime.now(timezone.utc))
 
 links = soup.select("a[href*='/publication/orders-in-council']")
 seen_urls = set()
@@ -47,6 +47,7 @@ for link in links:
     seen_urls.add(href)
     full_url = urljoin(BASE_URL, href)
 
+    # Extract metadata context
     parent = link.find_parent(["div", "li", "article"])
     meta_text = parent.get_text(separator=" ", strip=True) if parent else ""
 
@@ -55,19 +56,23 @@ for link in links:
     )
 
     fe = fg.add_entry()
-    fe.id(full_url)
+    fe.id(full_url, isPermalink=True)
     fe.title(title)
     fe.link(href=full_url)
-    fe.description(f"{title} — Published by Executive Council Office.")
 
+    # Outlook requires a substantial summary or content block
+    description_html = f"<p><strong>{title}</strong></p><p>Published by Executive Council Office.</p><p><a href='{full_url}'>View Orders in Council and Documents on PEI.ca</a></p>"
+    fe.description(description_html)
+
+    # Supply native timezone-aware datetime object so feedgen formats it for Outlook
     if pub_date_match:
         try:
-            parsed_date = datetime.strptime(
-                pub_date_match.group(1), "%B %d, %Y"
-            )
-            fe.pubDate(parsed_date.strftime("%a, %d %b %Y 12:00:00 -0300"))
+            dt = datetime.strptime(pub_date_match.group(1), "%B %d, %Y")
+            fe.pubDate(dt.replace(tzinfo=timezone.utc))
         except ValueError:
-            pass
+            fe.pubDate(datetime.now(timezone.utc))
+    else:
+        fe.pubDate(datetime.now(timezone.utc))
 
     if len(seen_urls) >= 20:
         break
