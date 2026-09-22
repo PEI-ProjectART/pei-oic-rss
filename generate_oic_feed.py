@@ -1,29 +1,34 @@
-import os
 import re
 from datetime import datetime, timezone
 from urllib.parse import urljoin
-import requests
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
+from playwright.sync_api import sync_playwright
 
 TARGET_URL = "https://www.princeedwardisland.ca/en/publications/orders-in-council"
 BASE_URL = "https://www.princeedwardisland.ca"
 
-session = requests.Session()
-session.headers.update({
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-CA,en-US;q=0.9,en;q=0.8"
-})
+print(f"Launching headless browser for {TARGET_URL}...")
 
-print(f"Fetching {TARGET_URL}...")
-response = session.get(TARGET_URL, timeout=30)
-response.raise_for_status()
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    )
+    page = context.new_page()
 
-soup = BeautifulSoup(response.text, "html.parser")
+    # Navigate and wait for the Drupal publication view content to render
+    page.goto(TARGET_URL, wait_until="networkidle", timeout=60000)
+    
+    # Wait for the heading or listing container to appear
+    page.wait_for_selector("a[href*='orders-in-council']", timeout=15000)
+    
+    html = page.content()
+    browser.close()
+
+print(f"Rendered HTML successfully ({len(html)} bytes). Parsing entries...")
+
+soup = BeautifulSoup(html, "html.parser")
 
 fg = FeedGenerator()
 fg.title("PEI Orders in Council Updates")
@@ -35,34 +40,26 @@ fg.lastBuildDate(datetime.now(timezone.utc))
 seen_urls = set()
 entries = []
 
-# Scan all anchor tags
 for a in soup.find_all("a", href=True):
     href = a.get("href", "").strip()
     raw_text = a.get_text(separator=" ", strip=True)
     
-    # Strip trailing arrows or icons
-    clean_title = re.sub(r"[\s\u2192\u2794\u2022\u2190]+$", "", raw_text).strip()
-    
-    # Check if this link represents an OIC issue or a publication entry
-    is_oic_text = bool(re.search(r"orders\s+in\s+council", clean_title, re.IGNORECASE))
-    is_pub_link = "/publication/" in href.lower()
-    
-    if not (is_oic_text or (is_pub_link and "council" in href.lower())):
+    # Match links like "Orders in Council September 17, 2026 (897-956)"
+    if not re.search(r"orders\s+in\s+council\s+[a-z]+\s+\d{1,2}", raw_text, re.I):
         continue
-
-    # Filter out navigation/index headers
-    if "annual index" in clean_title.lower() or "search" in clean_title.lower():
+    if "annual index" in raw_text.lower():
         continue
-    if len(clean_title) < 5 or href in seen_urls:
+    if href in seen_urls:
         continue
 
     seen_urls.add(href)
     full_url = urljoin(BASE_URL, href)
 
-    # Walk up the tree to find the row container for publication date
-    parent = a.find_parent(["div", "li", "article", "td"])
-    meta_text = parent.get_text(separator=" ", strip=True) if parent else ""
+    # Clean trailing arrow characters
+    clean_title = re.sub(r"[\s\u2192\u2794\u2022\u2190]+$", "", raw_text).strip()
 
+    parent = a.find_parent(["div", "li", "article"])
+    meta_text = parent.get_text(separator=" ", strip=True) if parent else ""
     pub_date_match = re.search(r"Published date:\s*([A-Za-z]+ \d{1,2}, \d{4})", meta_text)
 
     entries.append({
@@ -71,14 +68,10 @@ for a in soup.find_all("a", href=True):
         "pub_date_str": pub_date_match.group(1) if pub_date_match else None
     })
 
-print(f"Discovered {len(entries)} OIC entries.")
+print(f"Extracted {len(entries)} OIC batches.")
 
-# Fallback in case titles were blank or nested in custom divs
 if not entries:
-    print("Debug: Dumping top 20 links found in page:")
-    for l in soup.find_all("a", href=True)[:20]:
-        print(" ->", l.get("href"), "| Text:", l.get_text(strip=True)[:40])
-    raise ValueError("Zero entries matched. Inspect debug output above.")
+    raise ValueError("No entries found even after browser render.")
 
 for item in entries[:25]:
     fe = fg.add_entry()
@@ -103,4 +96,4 @@ for item in entries[:25]:
         fe.pubDate(datetime.now(timezone.utc))
 
 fg.rss_file("pei_oic_feed.xml", pretty=True)
-print(f"Successfully generated pei_oic_feed.xml with {len(entries[:25])} entries.")
+print(f"Generated pei_oic_feed.xml with {len(entries[:25])} items.")
