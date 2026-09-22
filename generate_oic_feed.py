@@ -8,25 +8,35 @@ from playwright.sync_api import sync_playwright
 TARGET_URL = "https://www.princeedwardisland.ca/en/publications/orders-in-council"
 BASE_URL = "https://www.princeedwardisland.ca"
 
-print(f"Launching headless browser for {TARGET_URL}...")
+print(f"Launching browser to fetch {TARGET_URL}...")
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
+    browser = p.chromium.launch(
+        headless=True,
+        args=[
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-setuid-sandbox"
+        ]
+    )
     context = browser.new_context(
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        viewport={"width": 1920, "height": 1080},
+        locale="en-CA",
+        timezone_id="America/Halifax"
     )
     page = context.new_page()
 
-    # Navigate and wait for the Drupal publication view content to render
-    page.goto(TARGET_URL, wait_until="networkidle", timeout=60000)
+    # Avoid networkidle hang
+    page.goto(TARGET_URL, wait_until="domcontentloaded", timeout=45000)
     
-    # Wait for the heading or listing container to appear
-    page.wait_for_selector("a[href*='orders-in-council']", timeout=15000)
+    # Give the page 5 seconds to run client scripts and render lists
+    page.wait_for_timeout(5000)
     
     html = page.content()
     browser.close()
 
-print(f"Rendered HTML successfully ({len(html)} bytes). Parsing entries...")
+print(f"Successfully retrieved HTML ({len(html)} bytes). Parsing...")
 
 soup = BeautifulSoup(html, "html.parser")
 
@@ -43,8 +53,7 @@ entries = []
 for a in soup.find_all("a", href=True):
     href = a.get("href", "").strip()
     raw_text = a.get_text(separator=" ", strip=True)
-    
-    # Match links like "Orders in Council September 17, 2026 (897-956)"
+
     if not re.search(r"orders\s+in\s+council\s+[a-z]+\s+\d{1,2}", raw_text, re.I):
         continue
     if "annual index" in raw_text.lower():
@@ -54,8 +63,6 @@ for a in soup.find_all("a", href=True):
 
     seen_urls.add(href)
     full_url = urljoin(BASE_URL, href)
-
-    # Clean trailing arrow characters
     clean_title = re.sub(r"[\s\u2192\u2794\u2022\u2190]+$", "", raw_text).strip()
 
     parent = a.find_parent(["div", "li", "article"])
@@ -71,7 +78,10 @@ for a in soup.find_all("a", href=True):
 print(f"Extracted {len(entries)} OIC batches.")
 
 if not entries:
-    raise ValueError("No entries found even after browser render.")
+    # Print page title to check if we hit Cloudflare's "Just a moment..."
+    title_tag = soup.find("title")
+    print("Page Title was:", title_tag.get_text(strip=True) if title_tag else "No title")
+    raise ValueError("Zero entries found. Check page title above.")
 
 for item in entries[:25]:
     fe = fg.add_entry()
