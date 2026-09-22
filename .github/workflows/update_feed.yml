@@ -1,0 +1,34 @@
+name: Update OIC Feed
+
+on:
+  schedule:
+    # Runs daily at 6:00 PM UTC
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 feedgen
+
+      - name: Run script to generate XML
+        run: python generate_oic_feed.py
+
+      - name: Commit and push if feed changed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add pei_oic_feed.xml
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automated feed update" && git push)
