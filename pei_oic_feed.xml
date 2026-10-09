@@ -7,14 +7,7 @@
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 07 Oct 2026 18:00:09 +0000</lastBuildDate>
-    <item>
-      <title>Orders in Council March 20, 2026 (343)</title>
-      <link>https://www.princeedwardisland.ca/sites/default/files/1cc0/20260320truwww_0.pdf</link>
-      <description>&lt;p&gt;&lt;strong&gt;Orders in Council March 20, 2026 (343)&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;Published by Executive Council Office.&lt;/p&gt;&lt;p&gt;&lt;a href='https://www.princeedwardisland.ca/sites/default/files/1cc0/20260320truwww_0.pdf'&gt;View Orders in Council Documents on PEI.ca&lt;/a&gt;&lt;/p&gt;</description>
-      <guid isPermaLink="false">https://www.princeedwardisland.ca/sites/default/files/1cc0/20260320truwww_0.pdf</guid>
-      <pubDate>Fri, 20 Mar 2026 00:00:00 +0000</pubDate>
-    </item>
+    <lastBuildDate>Fri, 09 Oct 2026 11:42:22 +0000</lastBuildDate>
     <item>
       <title>Orders in Council March 24, 2026 (344-373)</title>
       <link>https://www.princeedwardisland.ca/sites/default/files/afd3/20260324truwww_1.pdf</link>
@@ -182,6 +175,13 @@
       <description>&lt;p&gt;&lt;strong&gt;Orders in Council September 22, 2026 (957-967)&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;Published by Executive Council Office.&lt;/p&gt;&lt;p&gt;&lt;a href='https://www.princeedwardisland.ca/sites/default/files/2c9b/20260922truwww.pdf'&gt;View Orders in Council Documents on PEI.ca&lt;/a&gt;&lt;/p&gt;</description>
       <guid isPermaLink="false">https://www.princeedwardisland.ca/sites/default/files/2c9b/20260922truwww.pdf</guid>
       <pubDate>Fri, 25 Sep 2026 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Orders in Council October 1, 2026 (968-1007)</title>
+      <link>https://www.princeedwardisland.ca/sites/default/files/8389/20261001truwww.pdf</link>
+      <description>&lt;p&gt;&lt;strong&gt;Orders in Council October 1, 2026 (968-1007)&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;Published by Executive Council Office.&lt;/p&gt;&lt;p&gt;&lt;a href='https://www.princeedwardisland.ca/sites/default/files/8389/20261001truwww.pdf'&gt;View Orders in Council Documents on PEI.ca&lt;/a&gt;&lt;/p&gt;</description>
+      <guid isPermaLink="false">https://www.princeedwardisland.ca/sites/default/files/8389/20261001truwww.pdf</guid>
+      <pubDate>Thu, 08 Oct 2026 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
